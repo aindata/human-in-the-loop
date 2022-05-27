@@ -12,7 +12,6 @@ Main principles in annotator building:
 """
 
 import csv
-
 annotation_instructions = "Please type 1 if this message is disaster-related, "
 annotation_instructions += "or hit Enter if not.\n"
 annotation_instructions += "Type 2 to go back to the last message, "
@@ -31,7 +30,6 @@ detailed_instructions += "  - natural disasters and man-made ones like wars.\n"
 detailed_instructions += "It does not include:\n"
 detailed_instructions += "  - criminal acts and non-disaster-related police work\n"
 detailed_instructions += "  - post-response activity like disaster-related memorials.\n\n"
-
 
 class DataReader(object):
 
@@ -61,12 +59,12 @@ class DataReader(object):
                     self.already_labeled[textid] = label
         return data
     @classmethod
-    def append_data(path_to_file, data):
+    def append_data(cls, path_to_file, data):
         with open(path_to_file, 'a', errors='replace') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerows(data)
     @classmethod    
-    def write_data(path_to_file, data):
+    def write_data(cls, path_to_file, data):
         with open(path_to_file, 'w', errors='replace') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerows(data)
