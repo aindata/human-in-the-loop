@@ -1,5 +1,6 @@
 from asyncore import read
 from unittest import skip
+from modelling import *
 from constants import *
 from annotator import *
 import random
@@ -23,7 +24,6 @@ def main():
     print('Evaluation data length {}'.format(evaluation_count))
 
     data = reader.load_data(unlabeled_data, skip_labeled=True)
-    data = data[0:2]
     print('Labeling data count {}'.format(len(data)))
 
     if evaluation_count < minimum_evaluation_items: # that means you need more evaluation data
@@ -49,7 +49,11 @@ def main():
         DataReader.append_data(training_not_related_data, not_related)
     else:
         # time to do active learning!
-        pass
+        print("Let's make some active learning")
+        feature_extractor = FeatureExtractor()
+        vocab_size = feature_extractor.create_features(data, training_data)
+        print(vocab_size)
+        train_model(training_data, feature_extractor.feature_index,evaluation_data=evaluation_data, vocab_size=vocab_size)
 
 
 if __name__ == '__main__':

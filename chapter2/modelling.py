@@ -4,6 +4,7 @@ Implements all modelling related code
 
 from random import shuffle
 import random
+import datetime
 import math
 import re
 from select import select
@@ -19,7 +20,7 @@ class FeatureExtractor(object):
     Create features
     """
     def __init__(self, 
-                 feature_index,
+                 feature_index={},
                  minword=3,                  
                 ) -> None:
         self.minword = 3
@@ -33,9 +34,9 @@ class FeatureExtractor(object):
         for item in data_to_label + training_data:
             text = item[1]
             for word in text.split():
-                total_trainig_words = total_training_words.get(word, 0) + 1
+                total_training_words[word] = total_training_words.get(word, 0) + 1
         
-        self._modify_feature_index(data_to_label+training_data, total_trainig_words)
+        self._modify_feature_index(data_to_label+training_data, total_training_words)
         return len(self.feature_index)
 
     def _modify_feature_index(self, 
@@ -45,6 +46,8 @@ class FeatureExtractor(object):
         for item in data:
             text = item[1]
             for word in text.split():
+                # import ipdb
+                # ipdb.set_trace()
                 if word not in self.feature_index and total_training_words[word] >= self.minword:
                     self.feature_index[word] = len(self.feature_index)
 
@@ -85,7 +88,7 @@ def train_model(training_data,
 
     loss_function = nn.NLLLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.01)
-    epochs = 10
+    epochs = 1
     select_per_epoch = 200  # number to select per epoch per label
 
     for epoch in range(epochs):
@@ -109,12 +112,13 @@ def train_model(training_data,
             log_probs = model(feature_vec)
 
             loss = loss_function(log_probs, target)
-            loss.backwoard()
+            loss.backward()
             optimizer.step()
     
-    fscore, auc = evaluate_model(model, evaluation_data)
+    fscore, auc = evaluate_model(model, evaluation_data, feature_extractor)
     fscore = round(fscore, 3)
     auc = round(auc, 3)
+    print(fscore, auc)
 
     # save model to path that is alphanumeric and includes number of items and accuracies in filename
     timestamp = re.sub('\.[0-9]*','_',str(datetime.datetime.now())).replace(" ", "_").replace("-", "").replace(":","")
@@ -122,7 +126,7 @@ def train_model(training_data,
     accuracies = str(fscore)+"_"+str(auc)
 
     model_path = 'models/'+timestamp+accuracies+training_size+'.params'
-    torch.save(model.state_dict(), model_path)
+    # torch.save(model.state_dict(), model_path)
     return model_path
 
 
