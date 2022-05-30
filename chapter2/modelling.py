@@ -2,6 +2,7 @@
 Implements all modelling related code
 """
 
+from cmath import log
 from random import shuffle
 import random
 import datetime
@@ -127,7 +128,8 @@ def train_model(training_data,
 
     model_path = 'models/'+timestamp+accuracies+training_size+'.params'
     # torch.save(model.state_dict(), model_path)
-    return model_path
+    # return model_path  # TODO: save model and return model_path?
+    return model
 
 
 def evaluate_model(model, evaluation_data, feature_extractor):
@@ -177,3 +179,48 @@ def evaluate_model(model, evaluation_data, feature_extractor):
     auc = total_greater / denom
     return (fscore, auc)
 
+
+def get_low_confidenced(model, 
+                       unlabeled_data,
+                       already_labeled,
+                       feature_extractor,
+                       number=80,
+                       limit=10000
+                       ):
+    """
+    Return the items with scores close to borderline
+    """
+    if limit == -1:
+        print("Getting confidences will take a while")
+    else:
+        shuffle(unlabeled_data)
+        unlabeled_data = unlabeled_data[:limit]    
+    
+    confidences = []
+    
+    with torch.no_grad():
+        for item in unlabeled_data:
+            textid = item[0]
+            if textid in already_labeled:
+                continue
+            item[3] = 'random_remaining'
+            text = item[1]
+            
+            feature_vector = feature_extractor.get_feature_vector(text.split())
+            log_probs = model(feature_vector)
+            
+            # get confidence 
+            prob_related = math.exp(log_probs.data.tolist()[0][1])
+            
+            if prob_related < 0.5:
+                confidence = 1 - prob_related
+            else:
+                confidence = prob_related
+            item[3] = 'low confidence'
+            item[4] = confidence
+            confidences.append(item)
+            
+    confidences.sort(key=lambda x: x[4])
+    return confidences[:number:]
+
+            

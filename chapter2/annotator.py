@@ -11,7 +11,7 @@ Main principles in annotator building:
 3. Include a back/undo option.
 """
 
-import csv
+
 annotation_instructions = "Please type 1 if this message is disaster-related, "
 annotation_instructions += "or hit Enter if not.\n"
 annotation_instructions += "Type 2 to go back to the last message, "
@@ -30,6 +30,12 @@ detailed_instructions += "  - natural disasters and man-made ones like wars.\n"
 detailed_instructions += "It does not include:\n"
 detailed_instructions += "  - criminal acts and non-disaster-related police work\n"
 detailed_instructions += "  - post-response activity like disaster-related memorials.\n\n"
+
+
+from collections import defaultdict
+import csv
+from random import shuffle
+
 
 class DataReader(object):
 
@@ -68,6 +74,7 @@ class DataReader(object):
         with open(path_to_file, 'w', errors='replace') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerows(data)
+
 
 def get_annotations(data,
                     already_labeled,
@@ -126,3 +133,80 @@ def get_annotations(data,
     return data
 
 
+def get_random_items(data,                     
+                     already_labeled, 
+                     number=None
+                    ):
+    """
+    Randomly sample items from unlabeled data
+    """
+    if not number:
+        raise ValueError('You must specify the number of random items')    
+    shuffle(data)
+
+    ret = []
+    for item in data:
+        textid = item[0]
+        if textid in already_labeled:
+            continue
+        item[3] = "random_remaining"
+        ret.append(item)
+        if len(ret) >= number:
+            break
+    return ret
+
+
+def get_outliers(training_data,
+                 unlabeled_data,
+                 already_labeled,
+                 number=None
+                ):
+    """
+    Get outliers from unlabeled data in training data
+    
+    Outlier is defined as the percent of words in an item in unlabeled data 
+    that do not exist in training_data
+    """
+    ret = []
+    
+    total_feature_counts = defaultdict(lambda: 0)
+    
+    for item in training_data:
+        text = item[1]
+        features = text.split()
+        
+        for feature in features:
+            if feature in total_feature_counts:
+                total_feature_counts[feature] += 1
+    
+    while(len(ret) < number):
+        top_outlier = []
+        top_match  = float('inf')
+        
+        for item in unlabeled_data:
+            textid = item[0]
+            if textid in already_labeled:
+                continue
+            
+            text = item[1]
+            features = text.split()
+            total_matches = 1  # smoothing factor
+            for feature in features:
+                if feature in total_feature_counts:
+                    total_matches += total_feature_counts[feature]
+            
+            ave_matches = total_matches / len(features)
+            if ave_matches < top_match:
+                top_match = ave_matches
+                top_outlier = item
+        
+        # add this outlier to list and update what is 'labeled',
+        # assuming this new outlier will get a label
+        top_outlier[3] = 'outlier'
+        ret.append(top_outlier)
+        text = top_outlier[1]
+        features = text.split()
+        for feature in features:
+            total_feature_counts[feature] += 1
+    return ret
+        
