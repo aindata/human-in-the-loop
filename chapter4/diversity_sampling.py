@@ -5,6 +5,7 @@ https://github.com/rmunro/pytorch_active_learning
 
 """
 
+from audioop import reverse
 from random import shuffle
 import torch
 
@@ -147,3 +148,76 @@ class DiversitySampling():
         # get_centroid, get_outlier, get_random samples for each unlabeled data
         # for more details please refer to:
         # https://github.com/rmunro/pytorch_active_learning/blob/master/pytorch_clusters.py
+        
+    
+    def get_representative_samples(self,
+                                   training_data,
+                                   unlabeled_data,
+                                   number=20,
+                                   limit=10000
+                                   ):
+        """
+        Gets the most representative unlabeled items, compared to training data.
+        Creates one cluster for each dataset, i.e. training and unlabeled
+        
+        Args.
+            training_data: training_data for model (labeled)
+            unlabeled_data: data yet to be labeled
+            number: number of representative samples
+            limit: number of unlabeled items to consider
+        """
+        
+        if limit > 0:
+            shuffle(training_data)
+            training_data = training_data[:limit]
+            shuffle(unlabeled_data)
+            unlabeled_data = unlabeled_data[:limit]
+
+        # TODO: implement cluster class from https://github.com/rmunro/pytorch_active_learning/blob/master/pytorch_clusters.py    
+        training_cluster = Cluster()  
+        for item in training_data:
+            training_cluster.add_to_cluster(item)
+        
+        
+        unlabeled_cluster = Cluster()
+        for item in unlabeled_data:
+            unlabeled_cluster.add_to_cluster(item)
+            
+        for item in unlabeled_data:
+            training_score = training_cluster.cosine_similary(item)
+            unlabeled_score = unlabeled_cluster.cosine_similary(item)
+            
+            representativeness = unlabeled_score - training_score
+            item[3] = 'representative'
+            item[4] = representativeness
+            
+        unlabeled_data.sort(reverse=True, key=lambda x: x[4])
+        return unlabeled_data[:number:]
+    
+    
+    def get_adaptive_representative_samples(self,
+                                            training_data,
+                                            unlabeled_data,
+                                            number=20,
+                                            limit=5000
+                                            ):
+        """
+        Adaptively gets the most representative unlabeled items, compared to training data
+        
+        Args.
+            training_data: training data for model (labeled)
+            unlabeled_data: data yet to be labeled
+            number: number of items to sample            
+        """
+        samples = []
+        
+        for i in range(number):
+            print('Epoch '+ str(i))
+            representative_item = self.get_adaptive_representative_samples(training_data, 
+                                                                           unlabeled_data,
+                                                                           1,
+                                                                           limit
+                                                                           )
+            representative_item = representative_item[0]  # to remove the list representation
+
+        return samples
