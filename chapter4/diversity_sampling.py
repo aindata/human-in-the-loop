@@ -1,3 +1,10 @@
+"""
+Implementation of diversity sampling methods the original code can be found in:
+https://github.com/rmunro/pytorch_active_learning
+
+
+"""
+
 from random import shuffle
 import torch
 
@@ -135,4 +142,8 @@ class DiversitySampling():
         outliers.sort(reverse=True, key=lambda x: x[4])
         return outliers[:number:]
         
-        
+        # Cluster-based sampling
+        # use cosine similarity to assign clusters for each instance in unlabeled data
+        # get_centroid, get_outlier, get_random samples for each unlabeled data
+        # for more details please refer to:
+        # https://github.com/rmunro/pytorch_active_learning/blob/master/pytorch_clusters.py
