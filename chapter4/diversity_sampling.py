@@ -2,7 +2,7 @@
 Implementation of diversity sampling methods the original code can be found in:
 https://github.com/rmunro/pytorch_active_learning
 
-
+http://www.robertmunro.com/Diversity_Sampling_Cheatsheet.pdf
 """
 
 from audioop import reverse
